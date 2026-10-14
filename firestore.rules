@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDispatchBoard(data) {
+      return data.keys().hasAll(['title', 'columns', 'rows'])
+        && data.keys().hasOnly(['title', 'columns', 'rows', 'updatedAt', 'updatedBy'])
+        && data.title is string && data.title.size() <= 100
+        && data.columns is list && data.columns.size() <= 100
+        && data.rows is list && data.rows.size() <= 500
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64))
+        && (!('updatedBy' in data) || (data.updatedBy is string && data.updatedBy.size() <= 128));
+    }
+
+    match /dispatch_boards/{boardId} {
+      // Direct access without login: Anyone can view and update the board
+      allow get, list: if isValidId(boardId);
+
+      allow create, update: if isValidId(boardId)
+        && isValidDispatchBoard(request.resource.data);
+
+      allow delete: if isValidId(boardId);
+    }
+  }
+}

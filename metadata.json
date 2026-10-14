@@ -1,0 +1,6 @@
+{
+  "name": "Araç Sefer ve Dağıtım Tablosu",
+  "description": "Hangi araçların hangi tarihte nerelere gittiğini gösteren sefer ve lojistik takip tablosu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

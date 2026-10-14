@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "DispatchBoard": {
+      "title": "DispatchBoard",
+      "description": "Logistics vehicle dispatch and trip board containing date columns, vehicle rows, and cell routes",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the dispatch board",
+          "maxLength": 100
+        },
+        "columns": {
+          "type": "array",
+          "description": "List of date columns in chronological order"
+        },
+        "rows": {
+          "type": "array",
+          "description": "List of vehicle rows with plate, driver and trip data"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["title", "columns", "rows"]
+    }
+  },
+  "firestore": {
+    "/dispatch_boards/{boardId}": {
+      "schema": "DispatchBoard",
+      "description": "Stores the central vehicle dispatch board"
+    }
+  }
+}
