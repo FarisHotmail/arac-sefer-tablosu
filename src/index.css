@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+:root {
+  --w-kat: 38px;
+  --w-plaka: 96px;
+  --w-driver: 135px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --w-kat: 44px;
+    --w-plaka: 116px;
+    --w-driver: 175px;
+  }
+}

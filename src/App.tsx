@@ -349,21 +349,30 @@ export default function App() {
         {/* Table Board Card */}
         <div className="bg-white border border-neutral-300 rounded-[4px] shadow-sm flex-1 flex flex-col overflow-hidden">
           <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-140px)]">
-            <table className="w-full border-collapse text-left select-text">
+            <table className="w-full border-separate border-spacing-0 text-left select-text">
               <thead>
-                <tr className="bg-neutral-100 text-neutral-900 border-b border-neutral-300 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
+                <tr className="bg-neutral-100 text-neutral-900 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
                   {/* Category */}
-                  <th className="py-2.5 px-2 text-center w-12 border-r border-neutral-300 bg-neutral-200 sticky left-0 z-30">
+                  <th
+                    style={{ width: 'var(--w-kat)', minWidth: 'var(--w-kat)', maxWidth: 'var(--w-kat)', left: 0 }}
+                    className="py-2.5 px-1 text-center border-b border-r border-neutral-300 bg-neutral-200 sticky left-0 z-40 box-border text-[11px] sm:text-xs"
+                  >
                     KAT
                   </th>
 
                   {/* Plaka */}
-                  <th className="py-2.5 px-3 w-32 border-r border-neutral-300 bg-neutral-200 sticky left-12 z-30 tracking-wider">
+                  <th
+                    style={{ width: 'var(--w-plaka)', minWidth: 'var(--w-plaka)', maxWidth: 'var(--w-plaka)', left: 'var(--w-kat)' }}
+                    className="py-2.5 px-2 border-b border-r border-neutral-300 bg-neutral-200 sticky z-40 tracking-wider box-border text-[11px] sm:text-xs"
+                  >
                     PLAKA
                   </th>
 
                   {/* Sürücü */}
-                  <th className="py-2.5 px-3 min-w-[180px] w-52 border-r border-neutral-300 bg-neutral-200 sticky left-44 z-30">
+                  <th
+                    style={{ width: 'var(--w-driver)', minWidth: 'var(--w-driver)', maxWidth: 'var(--w-driver)', left: 'calc(var(--w-kat) + var(--w-plaka))' }}
+                    className="py-2.5 px-2 border-b border-r-2 border-neutral-300 bg-neutral-200 sticky z-40 box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]"
+                  >
                     SÜRÜCÜ
                   </th>
 
@@ -373,7 +382,7 @@ export default function App() {
                     return (
                       <th
                         key={col.id}
-                        className="py-2.5 px-3 min-w-[210px] border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group"
+                        className="py-2.5 px-3 min-w-[200px] border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group box-border z-20"
                       >
                         <div className="flex items-center justify-between gap-1">
                           <div className="flex items-center gap-1.5">
@@ -404,13 +413,13 @@ export default function App() {
                   })}
 
                   {/* Notlar */}
-                  <th className="py-2.5 px-3 min-w-[280px] bg-neutral-100 text-neutral-900">
+                  <th className="py-2.5 px-3 min-w-[260px] border-b border-neutral-300 bg-neutral-100 text-neutral-900 box-border z-20">
                     NOT
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-neutral-200 text-xs">
+              <tbody className="text-xs">
                 {board.rows.map((row, index) => {
                   // Resolve plate background
                   let plateBgClass = 'bg-white text-neutral-950';
@@ -433,7 +442,7 @@ export default function App() {
                   }
 
                   // Category background
-                  const categoryBgClass = row.categoryBg === 'green' ? 'bg-[#a5d6a7] font-bold' : 'bg-neutral-100 font-semibold text-neutral-700';
+                  const categoryBgClass = row.categoryBg === 'green' ? 'bg-[#a5d6a7] font-bold text-neutral-900' : 'bg-neutral-100 font-semibold text-neutral-700';
 
                   return (
                     <tr
@@ -444,21 +453,25 @@ export default function App() {
                     >
                       {/* Category Column (Sticky left 0) */}
                       <td
-                        className={`py-2 px-1 text-center font-mono text-xs border-r border-neutral-300 sticky left-0 z-20 ${categoryBgClass}`}
+                        style={{ width: 'var(--w-kat)', minWidth: 'var(--w-kat)', maxWidth: 'var(--w-kat)', left: 0 }}
+                        className={`py-2 px-1 text-center font-mono text-xs border-b border-r border-neutral-300 sticky left-0 z-20 box-border ${categoryBgClass}`}
                       >
                         {row.category}
                       </td>
 
-                      {/* Plaka Column (Sticky left 12) */}
+                      {/* Plaka Column (Sticky left var(--w-kat)) */}
                       <td
-                        className={`py-2 px-2.5 font-mono font-bold tracking-tight border-r border-neutral-300 sticky left-12 z-20 ${plateBgClass}`}
+                        style={{ width: 'var(--w-plaka)', minWidth: 'var(--w-plaka)', maxWidth: 'var(--w-plaka)', left: 'var(--w-kat)' }}
+                        className={`py-2 px-1.5 sm:px-2 font-mono font-bold tracking-tight border-b border-r border-neutral-300 sticky z-20 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis ${plateBgClass}`}
                       >
                         {row.plate}
                       </td>
 
-                      {/* Driver Column (Sticky left 44) */}
+                      {/* Driver Column (Sticky left calc(var(--w-kat) + var(--w-plaka))) */}
                       <td
-                        className={`py-2 px-3 border-r border-neutral-300 sticky left-44 z-20 ${driverCellBg} ${driverStyleClass}`}
+                        style={{ width: 'var(--w-driver)', minWidth: 'var(--w-driver)', maxWidth: 'var(--w-driver)', left: 'calc(var(--w-kat) + var(--w-plaka))' }}
+                        className={`py-2 px-1.5 sm:px-2 border-b border-r-2 border-neutral-300 sticky z-20 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${driverCellBg} ${driverStyleClass}`}
+                        title={row.driver}
                       >
                         {row.driver || (
                           <span className="text-neutral-400 italic text-[11px]">-</span>
@@ -471,7 +484,7 @@ export default function App() {
                         return (
                           <td
                             key={col.id}
-                            className="p-1 border-r border-neutral-300 align-middle"
+                            className="p-1 border-b border-r border-neutral-300 align-middle box-border"
                           >
                             <TripCellView
                               trip={trip}
@@ -489,7 +502,7 @@ export default function App() {
                       {/* Not Column */}
                       <td
                         onClick={() => setEditingNoteRow(row)}
-                        className={`py-2 px-3 text-xs align-middle cursor-pointer hover:bg-neutral-100 transition-colors ${
+                        className={`py-2 px-3 text-xs align-middle cursor-pointer hover:bg-neutral-100 transition-colors border-b border-neutral-300 box-border ${
                           row.notesAlert ? 'text-red-600 font-semibold' : 'text-neutral-700'
                         }`}
                         title="Notu düzenlemek için tıklayın"
