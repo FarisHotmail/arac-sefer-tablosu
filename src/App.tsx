@@ -352,26 +352,16 @@ export default function App() {
             <table className="w-full border-separate border-spacing-0 text-left select-text">
               <thead>
                 <tr className="bg-neutral-100 text-neutral-900 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
-                  {/* Category */}
+                  {/* Sadece PLAKA sütunu sabitlenir */}
                   <th
-                    style={{ width: 'var(--w-kat)', minWidth: 'var(--w-kat)', maxWidth: 'var(--w-kat)', left: 0 }}
-                    className="py-2.5 px-1 text-center border-b border-r border-neutral-300 bg-neutral-200 sticky left-0 z-40 box-border text-[11px] sm:text-xs"
-                  >
-                    KAT
-                  </th>
-
-                  {/* Plaka */}
-                  <th
-                    style={{ width: 'var(--w-plaka)', minWidth: 'var(--w-plaka)', maxWidth: 'var(--w-plaka)', left: 'var(--w-kat)' }}
-                    className="py-2.5 px-2 border-b border-r border-neutral-300 bg-neutral-200 sticky z-40 tracking-wider box-border text-[11px] sm:text-xs"
+                    className="py-2.5 px-3 min-w-[105px] w-32 border-b border-r-2 border-neutral-300 bg-neutral-200 sticky left-0 z-40 tracking-wider box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]"
                   >
                     PLAKA
                   </th>
 
-                  {/* Sürücü */}
+                  {/* SÜRÜCÜ sütunu sabit değildir */}
                   <th
-                    style={{ width: 'var(--w-driver)', minWidth: 'var(--w-driver)', maxWidth: 'var(--w-driver)', left: 'calc(var(--w-kat) + var(--w-plaka))' }}
-                    className="py-2.5 px-2 border-b border-r-2 border-neutral-300 bg-neutral-200 sticky z-40 box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]"
+                    className="py-2.5 px-3 min-w-[150px] w-48 border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20"
                   >
                     SÜRÜCÜ
                   </th>
@@ -441,9 +431,6 @@ export default function App() {
                     driverStyleClass = 'text-neutral-950 font-bold';
                   }
 
-                  // Category background
-                  const categoryBgClass = row.categoryBg === 'green' ? 'bg-[#a5d6a7] font-bold text-neutral-900' : 'bg-neutral-100 font-semibold text-neutral-700';
-
                   return (
                     <tr
                       key={row.id}
@@ -451,26 +438,16 @@ export default function App() {
                         index % 2 === 1 ? 'bg-neutral-50/40' : 'bg-white'
                       }`}
                     >
-                      {/* Category Column (Sticky left 0) */}
+                      {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) */}
                       <td
-                        style={{ width: 'var(--w-kat)', minWidth: 'var(--w-kat)', maxWidth: 'var(--w-kat)', left: 0 }}
-                        className={`py-2 px-1 text-center font-mono text-xs border-b border-r border-neutral-300 sticky left-0 z-20 box-border ${categoryBgClass}`}
-                      >
-                        {row.category}
-                      </td>
-
-                      {/* Plaka Column (Sticky left var(--w-kat)) */}
-                      <td
-                        style={{ width: 'var(--w-plaka)', minWidth: 'var(--w-plaka)', maxWidth: 'var(--w-plaka)', left: 'var(--w-kat)' }}
-                        className={`py-2 px-1.5 sm:px-2 font-mono font-bold tracking-tight border-b border-r border-neutral-300 sticky z-20 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis ${plateBgClass}`}
+                        className={`py-2 px-2.5 sm:px-3 font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border text-[11px] sm:text-xs whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${plateBgClass}`}
                       >
                         {row.plate}
                       </td>
 
-                      {/* Driver Column (Sticky left calc(var(--w-kat) + var(--w-plaka))) */}
+                      {/* Sürücü Sütunu Sabit Değildir */}
                       <td
-                        style={{ width: 'var(--w-driver)', minWidth: 'var(--w-driver)', maxWidth: 'var(--w-driver)', left: 'calc(var(--w-kat) + var(--w-plaka))' }}
-                        className={`py-2 px-1.5 sm:px-2 border-b border-r-2 border-neutral-300 sticky z-20 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${driverCellBg} ${driverStyleClass}`}
+                        className={`py-2 px-3 border-b border-r border-neutral-300 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis ${driverCellBg} ${driverStyleClass}`}
                         title={row.driver}
                       >
                         {row.driver || (
