@@ -374,14 +374,14 @@ export default function App() {
                 <tr className="bg-neutral-100 text-neutral-900 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
                   {/* Sadece PLAKA sütunu sabitlenir */}
                   <th
-                    className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[85px] w-24 sm:w-28 sm:min-w-[100px] border-b border-r-2 border-neutral-300 bg-neutral-200 sticky left-0 z-40 tracking-wider box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]`}
+                    className={`${isCompact ? 'py-1 px-1.5 sm:px-2' : 'py-2.5 px-3'} min-w-[85px] w-24 sm:w-28 sm:min-w-[100px] border-b border-r-2 border-neutral-300 bg-neutral-200 sticky left-0 z-40 tracking-wider box-border text-[10.5px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]`}
                   >
                     PLAKA
                   </th>
 
                   {/* SÜRÜCÜ sütunu sabit değildir */}
                   <th
-                    className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[110px] w-32 sm:min-w-[140px] sm:w-44 border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20`}
+                    className={`${isCompact ? 'py-1 px-1.5 sm:px-2' : 'py-2.5 px-3'} min-w-[110px] w-32 sm:min-w-[140px] sm:w-44 border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[10.5px] sm:text-xs z-20`}
                   >
                     SÜRÜCÜ
                   </th>
@@ -392,15 +392,15 @@ export default function App() {
                     return (
                       <th
                         key={col.id}
-                        className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[145px] sm:min-w-[185px] border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group box-border z-20`}
+                        className={`${isCompact ? 'py-1 px-1.5 sm:px-2' : 'py-2.5 px-3'} min-w-[140px] sm:min-w-[180px] border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group box-border z-20`}
                       >
                         <div className="flex items-center justify-between gap-1">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3 text-neutral-500" />
-                            <span className="font-mono font-bold text-[11px] sm:text-xs">
+                            <span className="font-mono font-bold text-[10.5px] sm:text-xs">
                               {col.date}
                             </span>
-                            <span className="ml-1 text-[10px] sm:text-[11px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded-[2px] border border-blue-200">
+                            <span className="ml-1 text-[9.5px] sm:text-[10.5px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded-[2px] border border-blue-200">
                               (Toplam : {count})
                             </span>
                           </div>
@@ -423,7 +423,7 @@ export default function App() {
                   })}
 
                   {/* Notlar */}
-                  <th className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[170px] sm:min-w-[240px] border-b border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20`}>
+                  <th className={`${isCompact ? 'py-1 px-1.5 sm:px-2' : 'py-2.5 px-3'} min-w-[170px] sm:min-w-[240px] border-b border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[10.5px] sm:text-xs z-20`}>
                     NOT
                   </th>
                 </tr>
@@ -456,12 +456,12 @@ export default function App() {
                       key={row.id}
                       className={`hover:bg-neutral-50/80 transition-colors ${
                         index % 2 === 1 ? 'bg-neutral-50/40' : 'bg-white'
-                      }`}
+                      } ${isCompact ? 'h-[20px] sm:h-[22px]' : 'h-[36px]'}`}
                     >
                       {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) */}
                       <td
                         className={`font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
-                          isCompact ? 'py-0.5 sm:py-1 px-1.5 sm:px-2 text-[10.5px] sm:text-xs' : 'py-2 px-2.5 sm:px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-2.5 sm:px-3 text-xs'
                         } ${plateBgClass}`}
                       >
                         {row.plate}
@@ -470,12 +470,12 @@ export default function App() {
                       {/* Sürücü Sütunu Sabit Değildir */}
                       <td
                         className={`border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
-                          isCompact ? 'py-0.5 sm:py-1 px-1.5 sm:px-2 text-[10.5px] sm:text-xs' : 'py-2 px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
                         } ${driverCellBg} ${driverStyleClass}`}
                         title={row.driver}
                       >
                         {row.driver || (
-                          <span className="text-neutral-400 italic text-[10.5px]">-</span>
+                          <span className="text-neutral-400 italic text-[10px]">-</span>
                         )}
                       </td>
 
@@ -485,10 +485,11 @@ export default function App() {
                         return (
                           <td
                             key={col.id}
-                            className={`border-b border-r border-neutral-300 align-middle box-border ${isCompact ? 'p-0.5' : 'p-1'}`}
+                            className={`border-b border-r border-neutral-300 align-middle box-border ${isCompact ? 'p-[1px]' : 'p-1'}`}
                           >
                             <TripCellView
                               trip={trip}
+                              isCompact={isCompact}
                               onClick={() => {
                                 setEditingCell({
                                   row,
@@ -504,7 +505,7 @@ export default function App() {
                       <td
                         onClick={() => setEditingNoteRow(row)}
                         className={`align-middle cursor-pointer hover:bg-neutral-100 transition-colors border-b border-neutral-300 box-border ${
-                          isCompact ? 'py-0.5 sm:py-1 px-2 text-[10.5px] sm:text-xs' : 'py-2 px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
                         } ${row.notesAlert ? 'text-red-600 font-semibold' : 'text-neutral-700'}`}
                         title="Notu düzenlemek için tıklayın"
                       >
@@ -513,7 +514,7 @@ export default function App() {
                             {row.notesAlert && (
                               <span className="w-1.5 h-1.5 rounded-[2px] bg-red-600 shrink-0" />
                             )}
-                            <span className="line-clamp-1 sm:line-clamp-2">{row.notes}</span>
+                            <span className={isCompact ? 'truncate max-w-[220px]' : 'line-clamp-2'}>{row.notes}</span>
                           </div>
                         ) : (
                           <span className="text-neutral-300 select-none">-</span>
