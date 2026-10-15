@@ -16,12 +16,12 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
     return (
       <div
         onClick={onClick}
-        className={`w-full h-full min-h-[36px] flex items-center justify-center p-1.5 transition-colors group cursor-pointer ${
-          isEditable ? 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/50' : ''
+        className={`w-full h-full min-h-[24px] sm:min-h-[26px] flex items-center justify-center p-0.5 transition-colors group cursor-pointer ${
+          isEditable ? 'hover:bg-neutral-100/70' : ''
         }`}
         title={isEditable ? 'Sefer bilgisi eklemek için tıklayın' : undefined}
       >
-        <span className="text-[11px] text-neutral-300 dark:text-neutral-700 select-none group-hover:text-neutral-400 dark:group-hover:text-neutral-500 font-mono">
+        <span className="text-[10px] text-neutral-300 select-none group-hover:text-neutral-400 font-mono">
           -
         </span>
       </div>
@@ -33,7 +33,7 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
     return (
       <div
         onClick={onClick}
-        className="w-full h-full min-h-[36px] bg-black text-transparent select-none cursor-pointer border border-neutral-900 transition-opacity hover:opacity-90"
+        className="w-full h-full min-h-[24px] sm:min-h-[26px] bg-black text-transparent select-none cursor-pointer border border-neutral-900 transition-opacity hover:opacity-90 rounded-[2px]"
         title="Sefer Dışı / Bloke (Değiştirmek için tıklayın)"
       >
         &nbsp;
@@ -46,7 +46,7 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
     return (
       <div
         onClick={onClick}
-        className="w-full h-full min-h-[36px] px-2 py-1.5 bg-[#424242] text-white flex items-center justify-center text-center font-bold text-xs tracking-wider cursor-pointer border border-[#303030] rounded-[2px] shadow-2xs hover:brightness-110 transition-all"
+        className="w-full h-full min-h-[24px] sm:min-h-[26px] px-1.5 py-0.5 bg-[#424242] text-white flex items-center justify-center text-center font-bold text-[10px] sm:text-[11px] tracking-wider cursor-pointer border border-[#303030] rounded-[2px] shadow-2xs hover:brightness-110 transition-all leading-tight"
         title={`${trip.text} (Düzenlemek için tıklayın)`}
       >
         {trip.text || (trip.type === 'leave' ? 'RAPORLU' : 'ARIZALI')}
@@ -69,10 +69,10 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`w-full h-full min-h-[36px] px-2 py-1.5 flex items-center justify-center text-center text-xs leading-snug cursor-pointer border border-black/10 rounded-[2px] shadow-2xs hover:brightness-95 transition-all ${bgClasses}`}
+      className={`w-full h-full min-h-[24px] sm:min-h-[26px] px-1.5 py-0.5 flex items-center justify-center text-center text-[10px] sm:text-[11px] leading-tight cursor-pointer border border-black/10 rounded-[2px] shadow-2xs hover:brightness-95 transition-all ${bgClasses}`}
       title={`${trip.text} (Düzenlemek için tıklayın)`}
     >
-      <span className="font-semibold tracking-tight">{trip.text}</span>
+      <span className="font-semibold tracking-tight line-clamp-2">{trip.text}</span>
     </div>
   );
 };

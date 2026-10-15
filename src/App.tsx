@@ -13,6 +13,8 @@ import {
   Truck,
   CheckCircle2,
   Calendar,
+  Shrink,
+  Expand,
 } from 'lucide-react';
 import {
   saveBoardToFirestore,
@@ -33,6 +35,7 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<string>('Senkronize');
+  const [isCompact, setIsCompact] = useState(true);
 
   // Modal states
   const [isAddColOpen, setIsAddColOpen] = useState(false);
@@ -294,6 +297,17 @@ export default function App() {
               </span>
             </div>
 
+            {/* Density Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsCompact(!isCompact)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-neutral-700 bg-neutral-50 hover:bg-neutral-100 border border-neutral-300 rounded-[2px] transition-colors"
+              title={isCompact ? 'Standart görünüme geç' : 'Kompakt görünüme geç'}
+            >
+              {isCompact ? <Expand className="w-3.5 h-3.5 text-neutral-600" /> : <Shrink className="w-3.5 h-3.5 text-blue-600" />}
+              <span className="hidden md:inline">{isCompact ? 'Kompakt' : 'Standart'}</span>
+            </button>
+
             {/* ONLY ACTION ALLOWED TO EXTEND TABLE: Add Column */}
             <button
               type="button"
@@ -309,29 +323,26 @@ export default function App() {
           </div>
         </div>
 
-        {/* Mobile Sub-Header / Column Selector */}
-        <div className="sm:hidden px-4 py-2 border-t border-neutral-200 bg-neutral-50 flex items-center justify-between gap-2 overflow-x-auto">
-          <span className="text-[11px] font-semibold text-neutral-500 whitespace-nowrap">
-            Tarih Gösterimi:
-          </span>
-          <div className="flex items-center gap-1">
+        {/* Mobile Sub-Header / Column Selector & Compact Toggle */}
+        <div className="sm:hidden px-2.5 py-1.5 border-t border-neutral-200 bg-neutral-50 flex items-center justify-between gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setMobileActiveColId('all')}
-              className={`px-2 py-1 text-xs font-medium rounded-[2px] border ${
+              className={`px-2 py-0.5 text-[11px] font-medium rounded-[2px] border ${
                 mobileActiveColId === 'all'
                   ? 'bg-blue-700 text-white border-blue-700'
                   : 'bg-white text-neutral-700 border-neutral-300'
               }`}
             >
-              Tüm Tarihler
+              Tümü
             </button>
             {board.columns.map((col) => (
               <button
                 key={col.id}
                 type="button"
                 onClick={() => setMobileActiveColId(col.id)}
-                className={`px-2 py-1 text-xs font-medium rounded-[2px] border whitespace-nowrap font-mono ${
+                className={`px-1.5 py-0.5 text-[11px] font-medium rounded-[2px] border whitespace-nowrap font-mono ${
                   mobileActiveColId === col.id
                     ? 'bg-blue-700 text-white border-blue-700'
                     : 'bg-white text-neutral-700 border-neutral-300'
@@ -341,27 +352,36 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsCompact(!isCompact)}
+            className="px-2 py-0.5 text-[11px] font-medium text-neutral-700 bg-white border border-neutral-300 rounded-[2px] shrink-0 flex items-center gap-1"
+          >
+            {isCompact ? <Expand className="w-3 h-3 text-neutral-500" /> : <Shrink className="w-3 h-3 text-blue-600" />}
+            <span>{isCompact ? 'Genişlet' : 'Kompakt'}</span>
+          </button>
         </div>
       </header>
 
       {/* Main Table Container */}
-      <main className="flex-1 p-2 sm:p-4 max-w-[1920px] w-full mx-auto overflow-hidden flex flex-col">
+      <main className="flex-1 p-1 sm:p-3 max-w-[1920px] w-full mx-auto overflow-hidden flex flex-col">
         {/* Table Board Card */}
         <div className="bg-white border border-neutral-300 rounded-[4px] shadow-sm flex-1 flex flex-col overflow-hidden">
-          <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-140px)]">
+          <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-105px)] sm:max-h-[calc(100vh-130px)]">
             <table className="w-full border-separate border-spacing-0 text-left select-text">
               <thead>
                 <tr className="bg-neutral-100 text-neutral-900 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
                   {/* Sadece PLAKA sütunu sabitlenir */}
                   <th
-                    className="py-2.5 px-3 min-w-[105px] w-32 border-b border-r-2 border-neutral-300 bg-neutral-200 sticky left-0 z-40 tracking-wider box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]"
+                    className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[85px] w-24 sm:w-28 sm:min-w-[100px] border-b border-r-2 border-neutral-300 bg-neutral-200 sticky left-0 z-40 tracking-wider box-border text-[11px] sm:text-xs shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]`}
                   >
                     PLAKA
                   </th>
 
                   {/* SÜRÜCÜ sütunu sabit değildir */}
                   <th
-                    className="py-2.5 px-3 min-w-[150px] w-48 border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20"
+                    className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[110px] w-32 sm:min-w-[140px] sm:w-44 border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20`}
                   >
                     SÜRÜCÜ
                   </th>
@@ -372,27 +392,27 @@ export default function App() {
                     return (
                       <th
                         key={col.id}
-                        className="py-2.5 px-3 min-w-[200px] border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group box-border z-20"
+                        className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[145px] sm:min-w-[185px] border-b border-r border-neutral-300 bg-neutral-100 text-neutral-900 relative group box-border z-20`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-neutral-500" />
-                            <span className="font-mono font-bold text-xs">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-neutral-500" />
+                            <span className="font-mono font-bold text-[11px] sm:text-xs">
                               {col.date}
                             </span>
-                            <span className="ml-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded-[2px] border border-blue-200">
+                            <span className="ml-1 text-[10px] sm:text-[11px] font-semibold text-blue-700 bg-blue-50 px-1 py-0.2 rounded-[2px] border border-blue-200">
                               (Toplam : {count})
                             </span>
                           </div>
 
-                          {/* Delete Column Button ("Tabloya ekleme ve çıkarma") */}
+                          {/* Delete Column Button */}
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDeleteColTarget(col);
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-600 hover:bg-neutral-200 rounded-[2px] transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-0.5 text-neutral-400 hover:text-red-600 hover:bg-neutral-200 rounded-[2px] transition-all"
                             title={`${col.date} tarihli sütunu kaldır`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -403,7 +423,7 @@ export default function App() {
                   })}
 
                   {/* Notlar */}
-                  <th className="py-2.5 px-3 min-w-[260px] border-b border-neutral-300 bg-neutral-100 text-neutral-900 box-border z-20">
+                  <th className={`${isCompact ? 'py-1.5 px-2' : 'py-2.5 px-3'} min-w-[170px] sm:min-w-[240px] border-b border-neutral-300 bg-neutral-100 text-neutral-900 box-border text-[11px] sm:text-xs z-20`}>
                     NOT
                   </th>
                 </tr>
@@ -440,18 +460,22 @@ export default function App() {
                     >
                       {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) */}
                       <td
-                        className={`py-2 px-2.5 sm:px-3 font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border text-[11px] sm:text-xs whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${plateBgClass}`}
+                        className={`font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
+                          isCompact ? 'py-0.5 sm:py-1 px-1.5 sm:px-2 text-[10.5px] sm:text-xs' : 'py-2 px-2.5 sm:px-3 text-xs'
+                        } ${plateBgClass}`}
                       >
                         {row.plate}
                       </td>
 
                       {/* Sürücü Sütunu Sabit Değildir */}
                       <td
-                        className={`py-2 px-3 border-b border-r border-neutral-300 box-border text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis ${driverCellBg} ${driverStyleClass}`}
+                        className={`border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
+                          isCompact ? 'py-0.5 sm:py-1 px-1.5 sm:px-2 text-[10.5px] sm:text-xs' : 'py-2 px-3 text-xs'
+                        } ${driverCellBg} ${driverStyleClass}`}
                         title={row.driver}
                       >
                         {row.driver || (
-                          <span className="text-neutral-400 italic text-[11px]">-</span>
+                          <span className="text-neutral-400 italic text-[10.5px]">-</span>
                         )}
                       </td>
 
@@ -461,7 +485,7 @@ export default function App() {
                         return (
                           <td
                             key={col.id}
-                            className="p-1 border-b border-r border-neutral-300 align-middle box-border"
+                            className={`border-b border-r border-neutral-300 align-middle box-border ${isCompact ? 'p-0.5' : 'p-1'}`}
                           >
                             <TripCellView
                               trip={trip}
@@ -479,9 +503,9 @@ export default function App() {
                       {/* Not Column */}
                       <td
                         onClick={() => setEditingNoteRow(row)}
-                        className={`py-2 px-3 text-xs align-middle cursor-pointer hover:bg-neutral-100 transition-colors border-b border-neutral-300 box-border ${
-                          row.notesAlert ? 'text-red-600 font-semibold' : 'text-neutral-700'
-                        }`}
+                        className={`align-middle cursor-pointer hover:bg-neutral-100 transition-colors border-b border-neutral-300 box-border ${
+                          isCompact ? 'py-0.5 sm:py-1 px-2 text-[10.5px] sm:text-xs' : 'py-2 px-3 text-xs'
+                        } ${row.notesAlert ? 'text-red-600 font-semibold' : 'text-neutral-700'}`}
                         title="Notu düzenlemek için tıklayın"
                       >
                         {row.notes ? (
@@ -489,7 +513,7 @@ export default function App() {
                             {row.notesAlert && (
                               <span className="w-1.5 h-1.5 rounded-[2px] bg-red-600 shrink-0" />
                             )}
-                            <span className="line-clamp-2">{row.notes}</span>
+                            <span className="line-clamp-1 sm:line-clamp-2">{row.notes}</span>
                           </div>
                         ) : (
                           <span className="text-neutral-300 select-none">-</span>
