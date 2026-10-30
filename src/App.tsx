@@ -458,14 +458,6 @@ export default function App() {
 
               <tbody className="text-xs">
                 {board.rows.map((row, index) => {
-                  // Resolve driver text style (keep background strictly white)
-                  let driverStyleClass = 'text-neutral-900 font-medium';
-                  if (row.driverStyle === 'red-italic') {
-                    driverStyleClass = 'text-red-600 font-bold italic tracking-wide';
-                  } else if (row.driverStyle === 'orange-bg') {
-                    driverStyleClass = 'text-neutral-950 font-semibold';
-                  }
-
                   return (
                     <tr
                       key={row.id}
@@ -475,22 +467,22 @@ export default function App() {
                     >
                       {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) - Arkaplan Beyaz */}
                       <td
-                        className={`bg-white text-neutral-950 font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
+                        className={`bg-white text-black font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
                           isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-2.5 sm:px-3 text-xs'
                         }`}
                       >
                         {row.plate}
                       </td>
 
-                      {/* Sürücü Sütunu Sabit Değildir - Arkaplan Beyaz */}
+                      {/* Sürücü Sütunu Sabit Değildir - Arkaplan Beyaz, Yazı Siyah ve Düz */}
                       <td
-                        className={`bg-white border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
+                        className={`bg-white text-black font-medium not-italic border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
                           isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
-                        } ${driverStyleClass}`}
+                        }`}
                         title={row.driver}
                       >
                         {row.driver || (
-                          <span className="text-neutral-400 italic text-[10px]">-</span>
+                          <span className="text-neutral-400 text-[10px]">-</span>
                         )}
                       </td>
 
