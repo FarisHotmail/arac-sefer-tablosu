@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   Sparkles,
   RefreshCw,
-  Info,
 } from 'lucide-react';
 import { BoardColumn, DispatchBoardData, TripCell, TripType, VehicleRow } from '../types';
 
@@ -39,24 +38,7 @@ function inferTripType(val: string): TripType {
 
 function inferNoteAlert(noteText: string): boolean {
   const lower = (noteText || '').toLocaleLowerCase('tr-TR');
-  const keywords = [
-    'bakım',
-    'bakim',
-    'usta',
-    'lastik',
-    'kırık',
-    'kirik',
-    'arız',
-    'ariz',
-    'yağ',
-    'yag',
-    'fren',
-    'debriyaj',
-    'kontrol',
-    'acil',
-    'raporlu',
-    'değiş',
-  ];
+  const keywords = ['bakım', 'bakim', 'usta', 'lastik', 'kırık', 'kirik', 'arız', 'ariz', 'yağ', 'yag', 'fren', 'debriyaj', 'kontrol', 'acil', 'raporlu', 'değiş'];
   return keywords.some((kw) => lower.includes(kw));
 }
 
@@ -139,9 +121,8 @@ export function exportBoardToTSV(board: DispatchBoardData): string {
 interface ParsedSummary {
   updatedBoard: DispatchBoardData;
   matchedVehiclesCount: number;
-  skippedUnknownPlatesCount: number;
-  insertedTripsCount: number;
-  insertedNotesCount: number;
+  newVehiclesCount: number;
+  updatedTripsCount: number;
   detectedDates: string[];
   oldestDroppedDates: string[];
   isValid: boolean;
@@ -150,15 +131,15 @@ interface ParsedSummary {
 
 export function parsePastedTableIntoBoard(
   rawText: string,
-  currentBoard: DispatchBoardData
+  currentBoard: DispatchBoardData,
+  clearEmptyCells: boolean
 ): ParsedSummary {
   if (!rawText.trim()) {
     return {
       updatedBoard: currentBoard,
       matchedVehiclesCount: 0,
-      skippedUnknownPlatesCount: 0,
-      insertedTripsCount: 0,
-      insertedNotesCount: 0,
+      newVehiclesCount: 0,
+      updatedTripsCount: 0,
       detectedDates: [],
       oldestDroppedDates: [],
       isValid: false,
@@ -178,18 +159,14 @@ export function parsePastedTableIntoBoard(
     return {
       updatedBoard: currentBoard,
       matchedVehiclesCount: 0,
-      skippedUnknownPlatesCount: 0,
-      insertedTripsCount: 0,
-      insertedNotesCount: 0,
+      newVehiclesCount: 0,
+      updatedTripsCount: 0,
       detectedDates: [],
       oldestDroppedDates: [],
       isValid: false,
       errorMsg: 'Yapıştırılan veride geçerli tablo satırı bulunamadı.',
     };
   }
-
-  // Known plates in currentBoard to help detect whether paste includes PLAKA column or starts at trips
-  const knownPlates = new Set(currentBoard.rows.map((r) => normalizePlate(r.plate)));
 
   // Detect if first row is header
   const firstRowUpper = grid[0].map((c) => c.toLocaleUpperCase('tr-TR'));
@@ -212,15 +189,10 @@ export function parsePastedTableIntoBoard(
       const upper = cell.toLocaleUpperCase('tr-TR');
       const extractedDate = extractDateFromHeader(cell);
       if (upper === 'KAT' || upper === 'KATEGORİ') {
-        // skip KAT column
+        // skip KAT column automatically if copied from Excel with KAT
       } else if (upper.includes('PLAKA')) {
         plateColIdx = idx;
-      } else if (
-        upper.includes('SÜRÜCÜ') ||
-        upper.includes('SURUCU') ||
-        upper.includes('ŞOFÖR') ||
-        upper.includes('SOFOR')
-      ) {
+      } else if (upper.includes('SÜRÜCÜ') || upper.includes('SURUCU') || upper.includes('ŞOFÖR') || upper.includes('SOFOR')) {
         driverColIdx = idx;
       } else if (upper === 'NOT' || upper === 'NOTLAR' || upper.includes('AÇIKLAMA')) {
         noteColIdx = idx;
@@ -230,151 +202,113 @@ export function parsePastedTableIntoBoard(
     });
   }
 
-  const plateRegex = /^\d{2}[A-Z]{1,3}\d{2,5}$/;
-
-  // If plate column was not explicitly labeled in header, try finding which column contains known plates
+  // If no header or plateColIdx wasn't found in header, infer column positions from data rows
   if (plateColIdx === -1) {
-    const sampleRows = grid.slice(dataStartRow, dataStartRow + 8);
-    if (sampleRows.length > 0) {
-      // Check col 0 and col 1 for plate matches
-      const col0MatchesPlate = sampleRows.some((r) => {
-        const p = normalizePlate(r[0] || '');
-        return knownPlates.has(p) || plateRegex.test(p);
-      });
-      const col1MatchesPlate = sampleRows.some((r) => {
-        const p = normalizePlate(r[1] || '');
-        return knownPlates.has(p) || plateRegex.test(p);
-      });
-
-      if (col0MatchesPlate) {
-        plateColIdx = 0;
-        // Check if col 1 is driver (matches existing driver names or non-trip text when more columns exist)
-        const existingDrivers = new Set(
-          currentBoard.rows.map((r) => (r.driver || '').toLocaleUpperCase('tr-TR').trim()).filter(Boolean)
-        );
-        const col1MatchesDriver = sampleRows.some((r) =>
-          existingDrivers.has((r[1] || '').toLocaleUpperCase('tr-TR').trim())
-        );
-        if (col1MatchesDriver) {
-          driverColIdx = 1;
-        }
-      } else if (col1MatchesPlate) {
-        plateColIdx = 1;
-        const existingDrivers = new Set(
-          currentBoard.rows.map((r) => (r.driver || '').toLocaleUpperCase('tr-TR').trim()).filter(Boolean)
-        );
-        const col2MatchesDriver = sampleRows.some((r) =>
-          existingDrivers.has((r[2] || '').toLocaleUpperCase('tr-TR').trim())
-        );
-        if (col2MatchesDriver) {
-          driverColIdx = 2;
-        }
-      }
-    }
-  }
-
-  // Determine date columns if not already extracted from explicit date headers
-  if (dateColIndices.length === 0) {
-    if (hasExplicitHeader) {
-      const headerRow = grid[0];
-      headerRow.forEach((cell, idx) => {
-        if (idx !== plateColIdx && idx !== driverColIdx && idx !== noteColIdx) {
-          const upper = cell.toLocaleUpperCase('tr-TR');
-          if (upper !== 'KAT' && upper !== 'KATEGORİ' && cell !== '') {
-            const seqIdx = dateColIndices.length;
-            const fallbackDate = currentBoard.columns[seqIdx]?.date || cell;
-            dateColIndices.push({ colIdx: idx, dateStr: fallbackDate });
-          }
-        }
-      });
-    } else {
-      // No header row at all: map columns after plate/driver (or from 0 if positional paste without plates)
-      const startTripIdx =
-        plateColIdx !== -1 ? Math.max(plateColIdx, driverColIdx) + 1 : 0;
-      const maxColsInGrid = Math.max(...grid.slice(dataStartRow).map((r) => r.length), 0);
-      const remainingCount = maxColsInGrid - startTripIdx;
-
-      if (remainingCount > 0) {
-        const boardColsCount = currentBoard.columns.length;
-        const tripColsToMap = Math.min(remainingCount, Math.max(boardColsCount, 1));
-        for (let i = 0; i < tripColsToMap; i++) {
-          const fallbackDate =
-            currentBoard.columns[i]?.date ||
-            new Date().toLocaleDateString('tr-TR');
-          dateColIndices.push({
-            colIdx: startTripIdx + i,
-            dateStr: fallbackDate,
-          });
-        }
-        if (boardColsCount > 0 && remainingCount > boardColsCount && noteColIdx === -1) {
-          noteColIdx = startTripIdx + boardColsCount;
-        }
-      }
-    }
-  }
-
-  if (dateColIndices.length === 0 && noteColIdx === -1) {
-    return {
-      updatedBoard: currentBoard,
-      matchedVehiclesCount: 0,
-      skippedUnknownPlatesCount: 0,
-      insertedTripsCount: 0,
-      insertedNotesCount: 0,
-      detectedDates: [],
-      oldestDroppedDates: [],
-      isValid: false,
-      errorMsg: 'Yapıştırılan veride güncellenecek tarih/sefer veya not sütunu tespit edilemedi.',
-    };
-  }
-
-  // Replace columns cleanly with the pasted date columns (up to max 7 days)
-  const oldestDroppedDates: string[] = [];
-  let nextColumns: BoardColumn[];
-
-  if (dateColIndices.length > 0) {
-    // Deduplicate date strings while preserving order
-    const uniqueDateInfos: { dateStr: string }[] = [];
-    const seenDates = new Set<string>();
-    for (const d of dateColIndices) {
-      if (!seenDates.has(d.dateStr)) {
-        seenDates.add(d.dateStr);
-        uniqueDateInfos.push({ dateStr: d.dateStr });
-      }
-    }
-
-    while (uniqueDateInfos.length > 7) {
-      const dropped = uniqueDateInfos.shift();
-      if (dropped) oldestDroppedDates.push(dropped.dateStr);
-    }
-
-    nextColumns = uniqueDateInfos.map((d, idx) => {
-      const existing = currentBoard.columns.find((c) => c.date === d.dateStr);
+    const sampleRow = grid[dataStartRow] || grid[0];
+    if (!sampleRow || sampleRow.length < 2) {
       return {
-        id: existing ? existing.id : `col_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 5)}`,
-        date: d.dateStr,
-        order: idx,
-        isCustom: existing ? existing.isCustom : true,
+        updatedBoard: currentBoard,
+        matchedVehiclesCount: 0,
+        newVehiclesCount: 0,
+        updatedTripsCount: 0,
+        detectedDates: [],
+        oldestDroppedDates: [],
+        isValid: false,
+        errorMsg: 'Lütfen Excel veya E-Tablolar üzerinden en az Plaka ve Sefer sütunlarını içeren bir tablo kopyalayıp yapıştırın.',
       };
+    }
+
+    // Check if column 0 is KAT (like '10', '14', '18', 'K') and column 1 looks like a license plate
+    const col0 = normalizePlate(sampleRow[0]);
+    const col1 = normalizePlate(sampleRow[1] || '');
+    const plateRegex = /^\d{2}[A-Z]{1,3}\d{2,5}$/;
+
+    if ((col0.length <= 2 || col0 === 'K') && plateRegex.test(col1)) {
+      plateColIdx = 1;
+      driverColIdx = sampleRow.length > 2 ? 2 : -1;
+    } else {
+      plateColIdx = 0;
+      // Check if col 1 is driver name or directly trip/date
+      driverColIdx = 1;
+    }
+
+    // Remaining columns map to existing board columns + notes
+    const startTripIdx = (driverColIdx !== -1 ? driverColIdx : plateColIdx) + 1;
+    const maxColsInGrid = Math.max(...grid.slice(dataStartRow).map((r) => r.length));
+    const remainingCount = maxColsInGrid - startTripIdx;
+
+    if (remainingCount > 0 && dateColIndices.length === 0) {
+      const boardColsCount = currentBoard.columns.length;
+      const tripColsToMap = Math.min(remainingCount, boardColsCount);
+      for (let i = 0; i < tripColsToMap; i++) {
+        dateColIndices.push({
+          colIdx: startTripIdx + i,
+          dateStr: currentBoard.columns[i].date,
+        });
+      }
+      if (remainingCount > boardColsCount) {
+        noteColIdx = startTripIdx + boardColsCount;
+      }
+    }
+  } else if (hasExplicitHeader && dateColIndices.length === 0) {
+    // Header existed (e.g. PLAKA | SÜRÜCÜ | SEFER) without date format in header
+    const headerRow = grid[0];
+    headerRow.forEach((cell, idx) => {
+      if (idx !== plateColIdx && idx !== driverColIdx && idx !== noteColIdx) {
+        const upper = cell.toLocaleUpperCase('tr-TR');
+        if (upper !== 'KAT' && upper !== 'KATEGORİ' && cell !== '') {
+          // Map sequentially to existing columns if possible, or use header text as date
+          const seqIdx = dateColIndices.length;
+          const fallbackDate = currentBoard.columns[seqIdx]?.date || cell;
+          dateColIndices.push({ colIdx: idx, dateStr: fallbackDate });
+        }
+      }
     });
-  } else {
-    // Only Note column was pasted; keep existing date columns structure, but all trips will still be cleared
-    nextColumns = currentBoard.columns.map((c, idx) => ({ ...c, order: idx }));
   }
 
+  // Reconcile columns (respecting max 7 date columns rule)
+  let nextColumns: BoardColumn[] = [...currentBoard.columns];
+  const detectedDates = dateColIndices.map((d) => d.dateStr);
+  const oldestDroppedDates: string[] = [];
+
+  for (const dInfo of dateColIndices) {
+    const existing = nextColumns.find((c) => c.date === dInfo.dateStr);
+    if (!existing) {
+      const newCol: BoardColumn = {
+        id: `col_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        date: dInfo.dateStr,
+        order: nextColumns.length,
+        isCustom: true,
+      };
+      nextColumns.push(newCol);
+    }
+  }
+
+  // Enforce max 7 columns: keep the latest 7 if exceeded
+  const droppedColIds = new Set<string>();
+  while (nextColumns.length > 7) {
+    const removed = nextColumns.shift();
+    if (removed) {
+      oldestDroppedDates.push(removed.date);
+      droppedColIds.add(removed.id);
+    }
+  }
+
+  nextColumns = nextColumns.map((col, idx) => ({ ...col, order: idx }));
+
+  // Map dateStr -> columnId (only for columns that survived in the 7-column window)
   const dateToColId = new Map<string, string>();
   nextColumns.forEach((c) => dateToColId.set(c.date, c.id));
 
-  // CRITICAL REQUIREMENT:
-  // 1) Clear ALL existing trips and notes across the entire table first.
-  // 2) Keep PLAKA and SÜRÜCÜ strictly untouched (preserve exact rows, order, plate, and driver).
-  const nextRows: VehicleRow[] = currentBoard.rows.map((r) => ({
-    ...r,
-    plate: r.plate, // strictly untouched
-    driver: r.driver, // strictly untouched
-    notes: '', // cleared
-    notesAlert: false, // cleared
-    trips: {}, // all existing trip cells cleared
-  }));
+  // Clone rows and clean dropped column trips
+  const nextRows: VehicleRow[] = currentBoard.rows.map((r) => {
+    const cleanedTrips = { ...r.trips };
+    droppedColIds.forEach((id) => delete cleanedTrips[id]);
+    return {
+      ...r,
+      trips: cleanedTrips,
+    };
+  });
 
   const plateToIndex = new Map<string, number>();
   nextRows.forEach((r, idx) => {
@@ -382,52 +316,61 @@ export function parsePastedTableIntoBoard(
   });
 
   let matchedVehiclesCount = 0;
-  let skippedUnknownPlatesCount = 0;
-  let insertedTripsCount = 0;
-  let insertedNotesCount = 0;
+  let newVehiclesCount = 0;
+  let updatedTripsCount = 0;
 
   for (let rIdx = dataStartRow; rIdx < grid.length; rIdx++) {
     const cells = grid[rIdx];
-    let targetRowIdx: number | undefined;
+    const rawPlate = cells[plateColIdx] || '';
+    const normPlate = normalizePlate(rawPlate);
+    if (!normPlate || normPlate === 'PLAKA' || normPlate.includes('TOPLAM')) continue;
 
-    if (plateColIdx !== -1) {
-      const rawPlate = cells[plateColIdx] || '';
-      const normPlate = normalizePlate(rawPlate);
-      if (!normPlate || normPlate === 'PLAKA' || normPlate.includes('TOPLAM')) continue;
+    let targetRowIdx = plateToIndex.get(normPlate);
 
-      targetRowIdx = plateToIndex.get(normPlate);
-      if (targetRowIdx === undefined) {
-        // Do NOT add or modify Plaka/Sürücü rows; ignore unknown plates
-        skippedUnknownPlatesCount++;
-        continue;
-      }
+    if (targetRowIdx === undefined) {
+      // Create new vehicle row if not in existing list
+      const newRow: VehicleRow = {
+        id: `row_${normPlate}_${Math.random().toString(36).substring(2, 5)}`,
+        category: '18',
+        plate: normPlate,
+        driver: driverColIdx !== -1 ? (cells[driverColIdx] || '').trim() : '',
+        notes: noteColIdx !== -1 ? (cells[noteColIdx] || '').trim() : '',
+        notesAlert: noteColIdx !== -1 ? inferNoteAlert(cells[noteColIdx] || '') : false,
+        trips: {},
+      };
+      nextRows.push(newRow);
+      targetRowIdx = nextRows.length - 1;
+      plateToIndex.set(normPlate, targetRowIdx);
+      newVehiclesCount++;
     } else {
-      // Positional row mapping when user pastes only Date/Trip columns without Plaka column
-      const posIdx = rIdx - dataStartRow;
-      if (posIdx >= nextRows.length) continue;
-      targetRowIdx = posIdx;
-    }
-
-    matchedVehiclesCount++;
-    const rowObj = nextRows[targetRowIdx];
-
-    // Apply pasted Notes (if Note column exists in paste)
-    if (noteColIdx !== -1 && cells[noteColIdx] !== undefined) {
-      const incomingNote = cells[noteColIdx].trim();
-      if (incomingNote && incomingNote !== '-') {
-        rowObj.notes = incomingNote;
-        rowObj.notesAlert = inferNoteAlert(incomingNote);
-        insertedNotesCount++;
+      matchedVehiclesCount++;
+      const existingRow = nextRows[targetRowIdx];
+      if (driverColIdx !== -1 && cells[driverColIdx] !== undefined) {
+        const incomingDriver = cells[driverColIdx].trim();
+        if (incomingDriver || clearEmptyCells) {
+          existingRow.driver = incomingDriver;
+        }
+      }
+      if (noteColIdx !== -1 && cells[noteColIdx] !== undefined) {
+        const incomingNote = cells[noteColIdx].trim();
+        if (incomingNote || clearEmptyCells) {
+          existingRow.notes = incomingNote;
+          existingRow.notesAlert = incomingNote ? inferNoteAlert(incomingNote) : false;
+        }
       }
     }
 
-    // Apply pasted Trips
+    const rowObj = nextRows[targetRowIdx];
     for (const dInfo of dateColIndices) {
       const colId = dateToColId.get(dInfo.dateStr);
       if (!colId) continue;
 
       const rawCellVal = cells[dInfo.colIdx] !== undefined ? cells[dInfo.colIdx].trim() : '';
       if (!rawCellVal || rawCellVal === '-') {
+        if (clearEmptyCells && rowObj.trips[colId]) {
+          delete rowObj.trips[colId];
+          updatedTripsCount++;
+        }
         continue;
       }
 
@@ -437,23 +380,24 @@ export function parsePastedTableIntoBoard(
           ? { text: '', type: 'blocked' }
           : { text: rawCellVal, type: inferredType };
 
-      rowObj.trips[colId] = newTrip;
-      insertedTripsCount++;
+      const prevTrip = rowObj.trips[colId];
+      if (!prevTrip || prevTrip.text !== newTrip.text || prevTrip.type !== newTrip.type) {
+        rowObj.trips[colId] = newTrip;
+        updatedTripsCount++;
+      }
     }
   }
 
-  if (matchedVehiclesCount === 0) {
+  if (matchedVehiclesCount === 0 && newVehiclesCount === 0) {
     return {
       updatedBoard: currentBoard,
       matchedVehiclesCount: 0,
-      skippedUnknownPlatesCount,
-      insertedTripsCount: 0,
-      insertedNotesCount: 0,
-      detectedDates: nextColumns.map((c) => c.date),
+      newVehiclesCount: 0,
+      updatedTripsCount: 0,
+      detectedDates,
       oldestDroppedDates,
       isValid: false,
-      errorMsg:
-        'Yapıştırılan veride tablodaki plakalarla eşleşen hiçbir satır bulunamadı.',
+      errorMsg: 'Geçerli hiçbir araç plakası tespit edilemedi. İlk sütunun PLAKA olduğundan emin olun.',
     };
   }
 
@@ -464,10 +408,9 @@ export function parsePastedTableIntoBoard(
       rows: nextRows,
     },
     matchedVehiclesCount,
-    skippedUnknownPlatesCount,
-    insertedTripsCount,
-    insertedNotesCount,
-    detectedDates: nextColumns.map((c) => c.date),
+    newVehiclesCount,
+    updatedTripsCount,
+    detectedDates,
     oldestDroppedDates,
     isValid: true,
   };
@@ -480,12 +423,13 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
   onApplyBulkUpdate,
 }) => {
   const [pasteText, setPasteText] = useState('');
+  const [clearEmptyCells, setClearEmptyCells] = useState(true);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
 
   const preview = useMemo(
-    () => parsePastedTableIntoBoard(pasteText, currentBoard),
-    [pasteText, currentBoard]
+    () => parsePastedTableIntoBoard(pasteText, currentBoard, clearEmptyCells),
+    [pasteText, currentBoard, clearEmptyCells]
   );
 
   if (!isOpen) return null;
@@ -528,10 +472,10 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-neutral-900 text-sm tracking-tight">
-                Toplu Tablo Güncelleme (Temizle & Yeniden Yaz)
+                Toplu Tablo Güncelleme (Kopyala & Yapıştır)
               </h3>
               <p className="text-xs text-neutral-500">
-                Mevcut sefer/not verileri tamamen temizlenir, Plaka ve Sürücü sütunlarına dokunulmadan yeni veriler eklenir
+                Excel, Google E-Tablolar veya kopyalanmış tablo verisini doğrudan yapıştırarak tüm seferleri tek seferde güncelleyin
               </p>
             </div>
           </div>
@@ -548,11 +492,8 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
         <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
           {/* Top Helper Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-neutral-50 border border-neutral-200 p-2.5 rounded-[2px]">
-            <div className="flex items-center gap-1.5 text-xs text-neutral-700">
-              <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span>
-                <strong>Plaka</strong> ve <strong>Sürücü</strong> sütunları sabit korunur; yalnızca tarih/sefer ve not verileri sıfırlanıp yenilenir.
-              </span>
+            <div className="text-xs text-neutral-600">
+              <span className="font-semibold text-neutral-800">İpucu:</span> Mevcut tabloyu Excel&apos;e kopyalayıp düzenledikten sonra buraya geri yapıştırabilirsiniz.
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -612,14 +553,23 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
             />
           </div>
 
-          {/* Info Note */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+          {/* Options */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <label className="inline-flex items-center gap-2 text-xs text-neutral-700 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={clearEmptyCells}
+                onChange={(e) => setClearEmptyCells(e.target.checked)}
+                className="rounded-[2px] border-neutral-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                Yapıştırılan tabloda <strong>boş bırakılan hücrelerin</strong> mevcut sefer kaydını temizle
+              </span>
+            </label>
+
             <span className="text-[11px] text-neutral-500 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-500" />
               Sabah / Akşam / Gece / Raporlu / Arızalı renkleri metinden otomatik algılanır.
-            </span>
-            <span className="text-[11px] text-neutral-500">
-              Maksimum 7 tarih sütunu desteklenir.
             </span>
           </div>
 
@@ -644,32 +594,28 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
                     <span>
                       Eşleşen Araç: <strong>{preview.matchedVehiclesCount}</strong>
                     </span>
+                    {preview.newVehiclesCount > 0 && (
+                      <span>
+                        Yeni Eklenecek Araç: <strong>{preview.newVehiclesCount}</strong>
+                      </span>
+                    )}
                     <span>
-                      Yazılacak Sefer Hücresi: <strong>{preview.insertedTripsCount}</strong>
-                    </span>
-                    <span>
-                      Yazılacak Not: <strong>{preview.insertedNotesCount}</strong>
+                      Değişen Sefer Hücresi: <strong>{preview.updatedTripsCount}</strong>
                     </span>
                     {preview.detectedDates.length > 0 && (
                       <span>
-                        Yeni Tarih Sütunları:{' '}
+                        Algılanan Tarihler:{' '}
                         <strong className="font-mono">{preview.detectedDates.join(', ')}</strong>
                       </span>
                     )}
                   </div>
-
-                  {preview.skippedUnknownPlatesCount > 0 && (
-                    <div className="text-[11px] text-neutral-600">
-                      * Tabloda kayıtlı olmayan <strong>{preview.skippedUnknownPlatesCount}</strong> yabancı plaka satırı (Plaka/Sürücü listesi korunduğu için) atlandı.
-                    </div>
-                  )}
 
                   {preview.oldestDroppedDates.length > 0 && (
                     <div className="flex items-center gap-1.5 text-amber-800 bg-amber-100/80 border border-amber-300 px-2.5 py-1.5 rounded-[2px]">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
                       <span>
                         Maksimum 7 tarih sütunu kuralı gereği en eski tarih olan{' '}
-                        <strong className="font-mono">{preview.oldestDroppedDates.join(', ')}</strong> dahil edilmeyecektir.
+                        <strong className="font-mono">{preview.oldestDroppedDates.join(', ')}</strong> tablodan kaldırılacaktır.
                       </span>
                     </div>
                   )}
@@ -695,7 +641,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-40 disabled:cursor-not-allowed rounded-[2px] shadow-xs transition-colors cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>{isApplying ? 'Temizlenip Yazılıyor...' : 'Tabloyu Temizle ve Güncelle'}</span>
+            <span>{isApplying ? 'Uygulanıyor...' : 'Toplu Güncellemeyi Uygula'}</span>
           </button>
         </div>
       </div>

@@ -97,12 +97,6 @@ export default function App() {
   // Save changes to state & Firestore directly
   const persistChanges = async (newBoard: DispatchBoardData) => {
     setBoard(newBoard);
-    if (
-      mobileActiveColId !== 'all' &&
-      !newBoard.columns.some((c) => c.id === mobileActiveColId)
-    ) {
-      setMobileActiveColId('all');
-    }
     setIsSyncing(true);
     try {
       await saveBoardToFirestore(newBoard);
