@@ -59,6 +59,10 @@ function inferNoteAlert(noteText: string): boolean {
   return keywords.some((kw) => lower.includes(kw));
 }
 
+/**
+ * Parses TSV copied from Excel / Google Sheets.
+ * Supports multiline cells wrapped in quotes AND trailing empty tab columns.
+ */
 function parseTSV(raw: string): string[][] {
   const rows: string[][] = [];
   let currentRow: string[] = [];
@@ -82,16 +86,16 @@ function parseTSV(raw: string): string[][] {
       if (ch === '"' && currentCell === '') {
         inQuotes = true;
       } else if (ch === '\t') {
-        currentRow.push(currentCell.trim());
+        currentRow.push(currentCell.replace(/\s+/g, ' ').trim());
         currentCell = '';
       } else if (ch === '\r' && next === '\n') {
-        currentRow.push(currentCell.trim());
+        currentRow.push(currentCell.replace(/\s+/g, ' ').trim());
         rows.push(currentRow);
         currentRow = [];
         currentCell = '';
         i++;
       } else if (ch === '\n' || ch === '\r') {
-        currentRow.push(currentCell.trim());
+        currentRow.push(currentCell.replace(/\s+/g, ' ').trim());
         rows.push(currentRow);
         currentRow = [];
         currentCell = '';
@@ -102,7 +106,7 @@ function parseTSV(raw: string): string[][] {
   }
 
   if (currentCell !== '' || currentRow.length > 0) {
-    currentRow.push(currentCell.trim());
+    currentRow.push(currentCell.replace(/\s+/g, ' ').trim());
     rows.push(currentRow);
   }
 
@@ -110,9 +114,17 @@ function parseTSV(raw: string): string[][] {
 }
 
 function extractDateFromHeader(headerCell: string): string | null {
-  const match = headerCell.match(/(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/);
-  if (match) {
-    return match[1].replace(/[/-]/g, '.');
+  if (!headerCell) return null;
+  // Match DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  const fullMatch = headerCell.match(/(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/);
+  if (fullMatch) {
+    return fullMatch[1].replace(/[/-]/g, '.');
+  }
+  // Match DD.MM (e.g. 15.10 or 15/10)
+  const shortMatch = headerCell.match(/\b(\d{1,2}[./]\d{1,2})\b/);
+  if (shortMatch) {
+    const year = new Date().getFullYear();
+    return `${shortMatch[1].replace('/', '.')}.${year}`;
   }
   return null;
 }
@@ -146,13 +158,23 @@ interface ParsedSummary {
   errorMsg?: string;
 }
 
+/**
+ * Completely replaces the entire table (columns + rows + notes) with ONLY what is in rawText.
+ * Does NOT read or retain ANY rows or columns from currentBoard.
+ */
 export function parsePastedTableIntoBoard(
   rawText: string,
-  currentBoard: DispatchBoardData
+  boardTitle: string
 ): ParsedSummary {
+  const emptyBoard: DispatchBoardData = {
+    title: boardTitle,
+    columns: [],
+    rows: [],
+  };
+
   if (!rawText.trim()) {
     return {
-      updatedBoard: currentBoard,
+      updatedBoard: emptyBoard,
       vehicleCount: 0,
       tripCellCount: 0,
       noteCount: 0,
@@ -173,7 +195,7 @@ export function parsePastedTableIntoBoard(
 
   if (grid.length === 0) {
     return {
-      updatedBoard: currentBoard,
+      updatedBoard: emptyBoard,
       vehicleCount: 0,
       tripCellCount: 0,
       noteCount: 0,
@@ -184,12 +206,23 @@ export function parsePastedTableIntoBoard(
     };
   }
 
-  // Detect if first row is header
-  const firstRowUpper = grid[0].map((c) => c.toLocaleUpperCase('tr-TR'));
-  const hasExplicitHeader =
-    firstRowUpper.some((c) => c.includes('PLAKA')) ||
-    firstRowUpper.some((c) => c.includes('SÜRÜCÜ') || c.includes('SURUCU') || c.includes('ŞOFÖR')) ||
-    grid[0].some((c) => extractDateFromHeader(c) !== null);
+  // Find header row within the first 3 rows (in case Excel has a top title row or merged "(Toplam : X)" row above headers)
+  let headerRowIdx = -1;
+  const searchLimit = Math.min(grid.length, 4);
+  for (let i = 0; i < searchLimit; i++) {
+    const rowUpper = grid[i].map((c) => c.toLocaleUpperCase('tr-TR'));
+    const hasHeaderKeyword =
+      rowUpper.some((c) => c.includes('PLAKA')) ||
+      rowUpper.some((c) => c.includes('SÜRÜCÜ') || c.includes('SURUCU') || c.includes('ŞOFÖR')) ||
+      grid[i].some((c) => extractDateFromHeader(c) !== null);
+    if (hasHeaderKeyword) {
+      headerRowIdx = i;
+      // Prefer the row that explicitly has PLAKA if there's a summary row above it
+      if (rowUpper.some((c) => c.includes('PLAKA'))) {
+        break;
+      }
+    }
+  }
 
   let katColIdx = -1;
   let plateColIdx = -1;
@@ -198,13 +231,19 @@ export function parsePastedTableIntoBoard(
   const dateColIndices: { colIdx: number; dateStr: string }[] = [];
 
   let dataStartRow = 0;
+  const plateRegex = /^\d{2}[A-Z]{1,3}\d{2,5}$/;
 
-  if (hasExplicitHeader) {
-    dataStartRow = 1;
-    const headerRow = grid[0];
+  if (headerRowIdx !== -1) {
+    dataStartRow = headerRowIdx + 1;
+    const headerRow = grid[headerRowIdx];
+    // Also check if the row immediately above headerRowIdx had dates (common in Excel 2-row headers)
+    const aboveRow = headerRowIdx > 0 ? grid[headerRowIdx - 1] : null;
+
     headerRow.forEach((cell, idx) => {
       const upper = cell.toLocaleUpperCase('tr-TR').trim();
-      const extractedDate = extractDateFromHeader(cell);
+      const extractedDate =
+        extractDateFromHeader(cell) || (aboveRow ? extractDateFromHeader(aboveRow[idx] || '') : null);
+
       if (upper === 'KAT' || upper === 'KATEGORİ') {
         katColIdx = idx;
       } else if (upper.includes('PLAKA')) {
@@ -222,85 +261,94 @@ export function parsePastedTableIntoBoard(
         dateColIndices.push({ colIdx: idx, dateStr: extractedDate });
       }
     });
-  }
 
-  // If no header or plateColIdx wasn't found in header, infer column positions from data rows
-  if (plateColIdx === -1) {
-    const sampleRow = grid[dataStartRow] || grid[0];
-    if (!sampleRow || sampleRow.length < 2) {
+    // If header existed (e.g., PLAKA | SÜRÜCÜ | ... | NOT) and there are columns between SÜRÜCÜ and NOT (or after SÜRÜCÜ) whose headers weren't dates
+    const maxCols = Math.max(...grid.map((r) => r.length), 0);
+    if (dateColIndices.length === 0) {
+      const afterDriver = (driverColIdx !== -1 ? driverColIdx : plateColIdx) + 1;
+      const beforeNote = noteColIdx !== -1 ? noteColIdx : maxCols;
+      for (let idx = afterDriver; idx < beforeNote; idx++) {
+        if (idx === katColIdx || idx === plateColIdx || idx === driverColIdx || idx === noteColIdx) continue;
+        const headerLabel = (headerRow[idx] || (aboveRow ? aboveRow[idx] : '') || '').trim();
+        // Check if any data row actually has content in this column or if headerLabel is non-empty
+        const hasAnyData = grid.slice(dataStartRow).some((r) => (r[idx] || '').trim() !== '');
+        if (headerLabel || hasAnyData) {
+          dateColIndices.push({
+            colIdx: idx,
+            dateStr: headerLabel || `Tarih ${dateColIndices.length + 1}`,
+          });
+        }
+      }
+    }
+  } else {
+    // No header row pasted at all (raw data rows pasted directly from Excel selection)
+    const sampleRows = grid.slice(0, 6);
+    const maxCols = Math.max(...grid.map((r) => r.length), 0);
+
+    if (maxCols === 0) {
       return {
-        updatedBoard: currentBoard,
+        updatedBoard: emptyBoard,
         vehicleCount: 0,
         tripCellCount: 0,
         noteCount: 0,
         detectedDates: [],
         oldestDroppedDates: [],
         isValid: false,
-        errorMsg:
-          'Lütfen Excel veya E-Tablolar üzerinden Plaka ve Sefer sütunlarını içeren tabloyu kopyalayıp yapıştırın.',
+        errorMsg: 'Tablo sütunları algılanamadı.',
       };
     }
 
-    const col0 = normalizePlate(sampleRow[0]);
-    const col1 = normalizePlate(sampleRow[1] || '');
-    const plateRegex = /^\d{2}[A-Z]{1,3}\d{2,5}$/;
+    // Detect whether col 0 is KAT and col 1 is PLAKA, or col 0 is PLAKA
+    const col0IsPlate = sampleRows.some((r) => plateRegex.test(normalizePlate(r[0] || '')));
+    const col1IsPlate = sampleRows.some((r) => plateRegex.test(normalizePlate(r[1] || '')));
 
-    if ((col0.length <= 2 || col0 === 'K') && plateRegex.test(col1)) {
+    if (!col0IsPlate && col1IsPlate) {
       katColIdx = 0;
       plateColIdx = 1;
-      driverColIdx = sampleRow.length > 2 ? 2 : -1;
+      driverColIdx = maxCols > 2 ? 2 : -1;
     } else {
       plateColIdx = 0;
-      driverColIdx = sampleRow.length > 1 ? 1 : -1;
+      driverColIdx = maxCols > 1 ? 1 : -1;
     }
 
     const startTripIdx = (driverColIdx !== -1 ? driverColIdx : plateColIdx) + 1;
-    const maxColsInGrid = Math.max(...grid.slice(dataStartRow).map((r) => r.length), 0);
-    const remainingCount = maxColsInGrid - startTripIdx;
+    const remainingCols = maxCols - startTripIdx;
 
-    if (remainingCount > 0 && dateColIndices.length === 0) {
-      // If user pasted without headers, map date columns using current board dates (or sequential labels) up to 7
-      const boardColsCount = currentBoard.columns.length;
-      if (boardColsCount > 0 && remainingCount > boardColsCount && remainingCount === boardColsCount + 1) {
-        // Last column is likely NOT
-        for (let i = 0; i < boardColsCount; i++) {
-          dateColIndices.push({
-            colIdx: startTripIdx + i,
-            dateStr: currentBoard.columns[i].date,
-          });
+    if (remainingCols > 0) {
+      // Generate clean date labels starting from today if user didn't copy the header row
+      const base = new Date();
+      // If more than 1 remaining col, check if last column looks like long vehicle maintenance notes
+      let tripColsCount = remainingCols;
+      if (remainingCols >= 2) {
+        const lastColIdx = maxCols - 1;
+        const looksLikeNotes = grid.some((r) => {
+          const val = (r[lastColIdx] || '').toLocaleLowerCase('tr-TR');
+          return val.length > 32 || inferNoteAlert(val);
+        });
+        if (looksLikeNotes) {
+          noteColIdx = lastColIdx;
+          tripColsCount = remainingCols - 1;
         }
-        noteColIdx = startTripIdx + boardColsCount;
-      } else {
-        const tripColsToMap = Math.min(remainingCount, 7);
-        for (let i = 0; i < tripColsToMap; i++) {
-          const fallbackDate = currentBoard.columns[i]?.date || `Gün ${i + 1}`;
-          dateColIndices.push({
-            colIdx: startTripIdx + i,
-            dateStr: fallbackDate,
-          });
-        }
-        if (remainingCount > 7) {
-          noteColIdx = startTripIdx + 7;
-        }
+      }
+
+      for (let i = 0; i < tripColsCount; i++) {
+        const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        dateColIndices.push({
+          colIdx: startTripIdx + i,
+          dateStr: `${dd}.${mm}.${yyyy}`,
+        });
       }
     }
-  } else if (hasExplicitHeader && dateColIndices.length === 0) {
-    // Explicit header existed (e.g. PLAKA | SÜRÜCÜ | PAZARTESİ) without DD.MM.YYYY
-    const headerRow = grid[0];
-    headerRow.forEach((cell, idx) => {
-      if (
-        idx !== katColIdx &&
-        idx !== plateColIdx &&
-        idx !== driverColIdx &&
-        idx !== noteColIdx &&
-        cell.trim() !== ''
-      ) {
-        dateColIndices.push({ colIdx: idx, dateStr: cell.trim() });
-      }
-    });
   }
 
-  // Build completely fresh columns ONLY from the pasted data (max 7 days)
+  if (plateColIdx === -1) {
+    plateColIdx = 0;
+  }
+
+  // Enforce max 7 date columns
   const oldestDroppedDates: string[] = [];
   const uniqueDates: string[] = [];
   const seenDateSet = new Set<string>();
@@ -320,7 +368,7 @@ export function parsePastedTableIntoBoard(
   }
 
   const freshColumns: BoardColumn[] = uniqueDates.map((dateStr, idx) => ({
-    id: `col_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+    id: `col_${idx}_${dateStr.replace(/[^a-zA-Z0-9]/g, '_')}`,
     date: dateStr,
     order: idx,
     isCustom: true,
@@ -329,7 +377,7 @@ export function parsePastedTableIntoBoard(
   const dateToColId = new Map<string, string>();
   freshColumns.forEach((c) => dateToColId.set(c.date, c.id));
 
-  // Build completely fresh rows ONLY from the pasted data (old rows are completely deleted, duplicates merged by plate)
+  // Build completely fresh rows ONLY from the pasted grid (ZERO retention of old rows)
   const freshRows: VehicleRow[] = [];
   const plateToRowIdx = new Map<string, number>();
 
@@ -341,10 +389,10 @@ export function parsePastedTableIntoBoard(
     const rawPlate = cells[plateColIdx] || '';
     const normPlate = normalizePlate(rawPlate);
 
-    // Skip empty lines, repeated header lines, or summary lines
     if (
       !normPlate ||
       normPlate === 'PLAKA' ||
+      normPlate === 'KAT' ||
       normPlate.includes('TOPLAM') ||
       normPlate === '-'
     ) {
@@ -369,9 +417,8 @@ export function parsePastedTableIntoBoard(
     const existingIdx = plateToRowIdx.get(normPlate);
 
     if (existingIdx !== undefined) {
-      // Prevent duplicate rows if the pasted Excel itself has the same plate twice
       rowObj = freshRows[existingIdx];
-      if (driverVal) rowObj.driver = driverVal;
+      if (driverVal && driverVal !== '-') rowObj.driver = driverVal;
       if (cleanNote) {
         if (!rowObj.notes) noteCount++;
         rowObj.notes = cleanNote;
@@ -379,7 +426,7 @@ export function parsePastedTableIntoBoard(
       }
     } else {
       rowObj = {
-        id: `row_${normPlate}_${rIdx}`,
+        id: `row_${normPlate}`,
         category: categoryVal,
         plate: normPlate,
         driver: driverVal === '-' ? '' : driverVal,
@@ -414,20 +461,20 @@ export function parsePastedTableIntoBoard(
 
   if (freshRows.length === 0) {
     return {
-      updatedBoard: currentBoard,
+      updatedBoard: emptyBoard,
       vehicleCount: 0,
       tripCellCount: 0,
       noteCount: 0,
       detectedDates: uniqueDates,
       oldestDroppedDates,
       isValid: false,
-      errorMsg: 'Geçerli hiçbir araç satırı tespit edilemedi. İlk sütunun PLAKA olduğundan emin olun.',
+      errorMsg: 'Geçerli hiçbir araç satırı tespit edilemedi. Plaka sütununun dahil olduğundan emin olun.',
     };
   }
 
   return {
     updatedBoard: {
-      ...currentBoard,
+      title: boardTitle,
       columns: freshColumns,
       rows: freshRows,
       updatedAt: new Date().toISOString(),
@@ -452,8 +499,8 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
   const [isApplying, setIsApplying] = useState(false);
 
   const preview = useMemo(
-    () => parsePastedTableIntoBoard(pasteText, currentBoard),
-    [pasteText, currentBoard]
+    () => parsePastedTableIntoBoard(pasteText, currentBoard.title),
+    [pasteText, currentBoard.title]
   );
 
   if (!isOpen) return null;
@@ -496,10 +543,10 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-neutral-900 text-sm tracking-tight">
-                Toplu Tablo Yapıştır (Eski Verileri Sil & Yenisini Yaz)
+                Tabloyu Baştan Sona Yenile (Kopyala & Yapıştır)
               </h3>
               <p className="text-xs text-neutral-500">
-                Uygulandığında tablodaki mevcut tüm eski veriler silinir ve yerine yalnızca yapıştırdığınız tablo yazılır
+                Mevcut tablodaki tüm eski satır, plaka, sürücü, tarih ve notlar silinir; sadece yapıştırdığınız yeni tablo oluşturulur
               </p>
             </div>
           </div>
@@ -517,7 +564,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
           {/* Top Helper Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-neutral-50 border border-neutral-200 p-2.5 rounded-[2px]">
             <div className="text-xs text-neutral-600">
-              <span className="font-semibold text-neutral-800">İpucu:</span> Mevcut tabloyu kopyalayıp Excel&apos;de düzenledikten sonra buraya yapıştırabilirsiniz.
+              <span className="font-semibold text-neutral-800">İpucu:</span> Excel&apos;den başlık satırıyla birlikte (PLAKA, SÜRÜCÜ, Tarihler, NOT) seçip yapıştırın.
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -583,8 +630,8 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
               <Sparkles className="w-3 h-3 text-amber-500" />
               Sabah / Akşam / Gece / Raporlu / Arızalı renkleri metinden otomatik algılanır.
             </span>
-            <span className="text-[11px] text-amber-700 font-medium">
-              * Eski tablodaki tüm satır ve sütunlar silinip yerine bu veriler yazılır (mükerrer kayıt oluşmaz).
+            <span className="text-[11px] text-red-700 font-semibold">
+              Eski verilerin tamamı silinir, yalnızca yapıştırdığınız veriler kalır.
             </span>
           </div>
 
@@ -605,9 +652,12 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
               ) : (
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="font-bold text-emerald-800">Yeni Tablo Önizlemesi:</span>
+                    <span className="font-bold text-emerald-800">Oluşturulacak Yeni Tablo:</span>
                     <span>
-                      Toplam Araç Satırı: <strong>{preview.vehicleCount}</strong>
+                      Araç Sayısı: <strong>{preview.vehicleCount}</strong>
+                    </span>
+                    <span>
+                      Tarih Sütunu: <strong>{preview.detectedDates.length}</strong>
                     </span>
                     <span>
                       Dolu Sefer Hücresi: <strong>{preview.tripCellCount}</strong>
@@ -615,13 +665,12 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
                     <span>
                       Not Sayısı: <strong>{preview.noteCount}</strong>
                     </span>
-                    {preview.detectedDates.length > 0 && (
-                      <span>
-                        Tarih Sütunları:{' '}
-                        <strong className="font-mono">{preview.detectedDates.join(', ')}</strong>
-                      </span>
-                    )}
                   </div>
+                  {preview.detectedDates.length > 0 && (
+                    <div className="text-[11px] text-emerald-900">
+                      Tarihler: <strong className="font-mono">{preview.detectedDates.join(' | ')}</strong>
+                    </div>
+                  )}
 
                   {preview.oldestDroppedDates.length > 0 && (
                     <div className="flex items-center gap-1.5 text-amber-800 bg-amber-100/80 border border-amber-300 px-2.5 py-1.5 rounded-[2px]">
@@ -654,7 +703,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-40 disabled:cursor-not-allowed rounded-[2px] shadow-xs transition-colors cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>{isApplying ? 'Yazılıyor...' : 'Eskileri Sil ve Yeni Tabloyu Yaz'}</span>
+            <span>{isApplying ? 'Uygulanıyor...' : 'Eskileri Sil ve Tabloyu Baştan Yaz'}</span>
           </button>
         </div>
       </div>

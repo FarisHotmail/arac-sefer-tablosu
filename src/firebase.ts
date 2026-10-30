@@ -121,7 +121,7 @@ export async function saveBoardToFirestore(board: DispatchBoardData) {
 
   const docRef = doc(db, 'dispatch_boards', BOARD_DOC_ID);
   try {
-    await setDoc(docRef, payload, { merge: true });
+    await setDoc(docRef, payload);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `dispatch_boards/${BOARD_DOC_ID}`);
     throw error;
