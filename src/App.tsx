@@ -458,24 +458,12 @@ export default function App() {
 
               <tbody className="text-xs">
                 {board.rows.map((row, index) => {
-                  // Resolve plate background
-                  let plateBgClass = 'bg-white text-neutral-950';
-                  if (row.plateBg === 'green') {
-                    plateBgClass = 'bg-[#a5d6a7] text-neutral-950 font-semibold';
-                  } else if (row.plateBg === 'yellow') {
-                    plateBgClass = 'bg-[#fff59d] text-neutral-950 font-semibold';
-                  } else if (row.plateBg === 'orange') {
-                    plateBgClass = 'bg-[#ffcc80] text-neutral-950 font-semibold';
-                  }
-
-                  // Resolve driver style
+                  // Resolve driver text style (keep background strictly white)
                   let driverStyleClass = 'text-neutral-900 font-medium';
-                  let driverCellBg = 'bg-white';
                   if (row.driverStyle === 'red-italic') {
                     driverStyleClass = 'text-red-600 font-bold italic tracking-wide';
                   } else if (row.driverStyle === 'orange-bg') {
-                    driverCellBg = 'bg-[#ffa726]';
-                    driverStyleClass = 'text-neutral-950 font-bold';
+                    driverStyleClass = 'text-neutral-950 font-semibold';
                   }
 
                   return (
@@ -485,20 +473,20 @@ export default function App() {
                         index % 2 === 1 ? 'bg-neutral-50/40' : 'bg-white'
                       } ${isCompact ? 'h-[20px] sm:h-[22px]' : 'h-[36px]'}`}
                     >
-                      {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) */}
+                      {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) - Arkaplan Beyaz */}
                       <td
-                        className={`font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
+                        className={`bg-white text-neutral-950 font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
                           isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-2.5 sm:px-3 text-xs'
-                        } ${plateBgClass}`}
+                        }`}
                       >
                         {row.plate}
                       </td>
 
-                      {/* Sürücü Sütunu Sabit Değildir */}
+                      {/* Sürücü Sütunu Sabit Değildir - Arkaplan Beyaz */}
                       <td
-                        className={`border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
+                        className={`bg-white border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
                           isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
-                        } ${driverCellBg} ${driverStyleClass}`}
+                        } ${driverStyleClass}`}
                         title={row.driver}
                       >
                         {row.driver || (
