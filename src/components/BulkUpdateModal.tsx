@@ -266,7 +266,7 @@ export function parsePastedTableIntoBoard(
     });
   }
 
-  // Reconcile columns (respecting max 3 date columns rule)
+  // Reconcile columns (respecting max 7 date columns rule)
   let nextColumns: BoardColumn[] = [...currentBoard.columns];
   const detectedDates = dateColIndices.map((d) => d.dateStr);
   const oldestDroppedDates: string[] = [];
@@ -284,9 +284,9 @@ export function parsePastedTableIntoBoard(
     }
   }
 
-  // Enforce max 3 columns: keep the latest 3 if exceeded
+  // Enforce max 7 columns: keep the latest 7 if exceeded
   const droppedColIds = new Set<string>();
-  while (nextColumns.length > 3) {
+  while (nextColumns.length > 7) {
     const removed = nextColumns.shift();
     if (removed) {
       oldestDroppedDates.push(removed.date);
@@ -296,7 +296,7 @@ export function parsePastedTableIntoBoard(
 
   nextColumns = nextColumns.map((col, idx) => ({ ...col, order: idx }));
 
-  // Map dateStr -> columnId (only for columns that survived in the 3-column window)
+  // Map dateStr -> columnId (only for columns that survived in the 7-column window)
   const dateToColId = new Map<string, string>();
   nextColumns.forEach((c) => dateToColId.set(c.date, c.id));
 
@@ -614,7 +614,7 @@ export const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
                     <div className="flex items-center gap-1.5 text-amber-800 bg-amber-100/80 border border-amber-300 px-2.5 py-1.5 rounded-[2px]">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
                       <span>
-                        Maksimum 3 tarih sütunu kuralı gereği en eski tarih olan{' '}
+                        Maksimum 7 tarih sütunu kuralı gereği en eski tarih olan{' '}
                         <strong className="font-mono">{preview.oldestDroppedDates.join(', ')}</strong> tablodan kaldırılacaktır.
                       </span>
                     </div>

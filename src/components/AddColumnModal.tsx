@@ -58,8 +58,8 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
       return;
     }
 
-    // Check if column count is at limit (3)
-    if (existingColumns.length >= 3 && oldestColumn) {
+    // Check if column count is at limit (7)
+    if (existingColumns.length >= 7 && oldestColumn) {
       setShowConfirmReplace(true);
       return;
     }
@@ -78,7 +78,7 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
       isCustom: true,
     };
 
-    if (existingColumns.length >= 3 && oldestColumn) {
+    if (existingColumns.length >= 7 && oldestColumn) {
       onAdd(newCol, oldestColumn);
     } else {
       onAdd(newCol);
@@ -110,7 +110,7 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
                     Yeni Tarih Sütunu Ekle
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Tablo limiti: Maksimum 3 tarih sütunu ({existingColumns.length}/3)
+                    Tablo limiti: Maksimum 7 tarih sütunu ({existingColumns.length}/7)
                   </p>
                 </div>
               </div>
@@ -142,9 +142,9 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
                 {error && (
                   <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>
                 )}
-                {existingColumns.length >= 3 && (
+                {existingColumns.length >= 7 && (
                   <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2 border border-amber-200 dark:border-amber-800 rounded-[2px]">
-                    Not: Tabloda 3 tarih dolu olduğu için ekleme yapıldığında en eski tarih ({oldestColumn?.date}) silinmek üzere onayınıza sunulacaktır.
+                    Not: Tabloda 7 tarih dolu olduğu için ekleme yapıldığında en eski tarih ({oldestColumn?.date}) silinmek üzere onayınıza sunulacaktır.
                   </p>
                 )}
               </div>
@@ -177,7 +177,7 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
                 </div>
                 <div>
                   <h3 className="font-semibold text-neutral-900 dark:text-white text-sm">
-                    Tarih Sütunu Limiti (En Fazla 3 Adet)
+                    Tarih Sütunu Limiti (En Fazla 7 Adet)
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400">
                     En eski tarih tablodan kaldırılacaktır
@@ -195,7 +195,7 @@ export const AddColumnModal: React.FC<AddColumnModalProps> = ({
 
             <div className="p-5 space-y-4">
               <p className="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">
-                Tabloda en fazla <strong>3 adet</strong> tarih sütunu bulunabilir. Yeni tarih eklendiğinde, tablonun en eski tarihi olan <span className="font-mono font-bold text-red-600 dark:text-red-400">{oldestColumn?.date}</span> sütunu ve bu tarihe ait tüm sefer kayıtları silinecektir.
+                Tabloda en fazla <strong>7 adet</strong> tarih sütunu bulunabilir. Yeni tarih eklendiğinde, tablonun en eski tarihi olan <span className="font-mono font-bold text-red-600 dark:text-red-400">{oldestColumn?.date}</span> sütunu ve bu tarihe ait tüm sefer kayıtları silinecektir.
               </p>
 
               {/* Visual Shift Preview */}

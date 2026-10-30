@@ -7,7 +7,7 @@ Minimalist ve modern tasarıma sahip, gerçek zamanlı Firebase Firestore entegr
 - **Minimalist & Modern Arayüz:** Keskin ve sade görünüm için tüm bileşenlerde 2px ve 4px köşe yuvarlaklığı (`border-radius`).
 - **Girişsiz Doğrudan Kullanım:** Herhangi bir hesap girişi gerektirmeden, siteyi açan herkes anında seferleri görebilir, yeni tarih ekleyebilir veya hücreleri düzenleyebilir.
 - **Sadece Sütun Ekleme & Çıkarma:** Tablo bütünlüğünü korumak adına sadece tarih sütunu eklenebilir. Sütun silme desteği mevcuttur.
-- **3 Tarih Sütunu Limiti & Onay Ekranı:** Tabloda aynı anda en fazla 3 tarih sütunu bulunur. 4. tarih eklendiğinde kullanıcıya en eski tarihin silineceğine dair onay ekranı sunulur; onaylanırsa en eski tarih temizlenip yeni tarih eklenir.
+- **7 Tarih Sütunu Limiti & Onay Ekranı:** Tabloda aynı anda en fazla 7 tarih sütunu bulunur. 8. tarih eklendiğinde kullanıcıya en eski tarihin silineceğine dair onay ekranı sunulur; onaylanırsa en eski tarih temizlenip yeni tarih eklenir.
 - **Renk Kodlu Sefer Takibi:**
   - 🌸 **Pembe:** Sabah Seferleri
   - ☀️ **Sarı:** Akşam Seferleri

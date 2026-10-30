@@ -108,7 +108,7 @@ export default function App() {
     }
   };
 
-  // Add column (with optional removal of oldest column to maintain 3 max limit)
+  // Add column (with optional removal of oldest column to maintain 7 max limit)
   const handleAddColumn = async (newCol: BoardColumn, columnToRemove?: BoardColumn) => {
     let updatedColumns = [...board.columns];
     let updatedRows = [...board.rows];
@@ -341,7 +341,7 @@ export default function App() {
               type="button"
               onClick={() => setIsAddColOpen(true)}
               className="inline-flex items-center justify-center p-2 text-white bg-blue-700 hover:bg-blue-800 border border-blue-800 rounded-[2px] shadow-xs transition-colors cursor-pointer"
-              title={`Yeni Tarih Sütunu Ekle (${board.columns.length}/3)`}
+              title={`Yeni Tarih Sütunu Ekle (${board.columns.length}/7)`}
               aria-label="Yeni Tarih Sütunu Ekle"
             >
               <CalendarPlus className="w-4 h-4" />
@@ -539,7 +539,7 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="flex items-center gap-1 font-medium">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Toplam {board.rows.length} Araç & {board.columns.length}/3 Tarih Sütunu
+                Toplam {board.rows.length} Araç & {board.columns.length}/7 Tarih Sütunu
               </span>
               <span className="hidden md:inline text-neutral-400">|</span>
               <span className="hidden md:inline text-neutral-500">
