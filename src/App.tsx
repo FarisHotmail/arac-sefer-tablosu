@@ -376,7 +376,7 @@ export default function App() {
       </header>
 
       {/* Main Table Container */}
-      <main className="flex-1 p-1 sm:p-3 max-w-[1920px] w-full mx-auto overflow-hidden flex flex-col">
+      <main className="flex-1 p-1 max-w-[1920px] w-full mx-auto overflow-hidden flex flex-col">
         {/* Table Board Card */}
         <div className="bg-white border border-neutral-300 rounded-[4px] shadow-sm flex-1 flex flex-col overflow-hidden">
           <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-88px)] sm:max-h-[calc(100vh-80px)]">
