@@ -11,13 +11,10 @@ import {
   RefreshCw,
   Trash2,
   Truck,
-  CheckCircle2,
   Calendar,
   Shrink,
   Expand,
   ClipboardPaste,
-  Copy,
-  Check,
 } from 'lucide-react';
 import {
   saveBoardToFirestore,
@@ -32,7 +29,7 @@ import { AddColumnModal } from './components/AddColumnModal';
 import { EditCellModal } from './components/EditCellModal';
 import { DeleteColumnModal } from './components/DeleteColumnModal';
 import { EditNoteModal } from './components/EditNoteModal';
-import { BulkUpdateModal, exportBoardToTSV } from './components/BulkUpdateModal';
+import { BulkUpdateModal } from './components/BulkUpdateModal';
 
 export default function App() {
   const [board, setBoard] = useState<DispatchBoardData>(getLocalBoard() || INITIAL_BOARD);
@@ -44,8 +41,6 @@ export default function App() {
   // Modal states
   const [isAddColOpen, setIsAddColOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-  const [copiedBoardQuick, setCopiedBoardQuick] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   const [deleteColTarget, setDeleteColTarget] = useState<BoardColumn | null>(null);
 
   // Cell editor states
@@ -231,23 +226,6 @@ export default function App() {
     await persistChanges(updatedBoard);
   };
 
-  // Reset to initial spreadsheet template if needed
-  const handleResetToDefault = async () => {
-    await persistChanges(INITIAL_BOARD);
-    setConfirmReset(false);
-  };
-
-  // Copy full table TSV to clipboard directly
-  const handleQuickCopyTable = async () => {
-    try {
-      await navigator.clipboard.writeText(exportBoardToTSV(board));
-      setCopiedBoardQuick(true);
-      setTimeout(() => setCopiedBoardQuick(false), 2000);
-    } catch {
-      setIsBulkOpen(true);
-    }
-  };
-
   // Filter columns to display based on mobile picker
   const displayedColumns = useMemo(() => {
     if (mobileActiveColId === 'all') return board.columns;
@@ -401,7 +379,7 @@ export default function App() {
       <main className="flex-1 p-1 sm:p-3 max-w-[1920px] w-full mx-auto overflow-hidden flex flex-col">
         {/* Table Board Card */}
         <div className="bg-white border border-neutral-300 rounded-[4px] shadow-sm flex-1 flex flex-col overflow-hidden">
-          <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-105px)] sm:max-h-[calc(100vh-130px)]">
+          <div className="overflow-x-auto overflow-y-auto flex-1 max-h-[calc(100vh-88px)] sm:max-h-[calc(100vh-80px)]">
             <table className="w-full border-separate border-spacing-0 text-left select-text">
               <thead>
                 <tr className="bg-neutral-100 text-neutral-900 text-xs uppercase font-bold sticky top-0 z-30 shadow-2xs">
@@ -538,82 +516,6 @@ export default function App() {
                 })}
               </tbody>
             </table>
-          </div>
-
-          {/* Footer Bar */}
-          <div className="px-4 py-2 border-t border-neutral-200 bg-neutral-50 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-600">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Toplam {board.rows.length} Araç & {board.columns.length}/7 Tarih Sütunu
-              </span>
-              <span className="hidden md:inline text-neutral-400">|</span>
-              <span className="hidden md:inline text-neutral-500">
-                Tek tek düzenlemek için hücreye tıklayın veya toplu tablo yapıştırın.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleQuickCopyTable}
-                className="inline-flex items-center gap-1 text-neutral-600 hover:text-neutral-900 font-medium text-[11px] cursor-pointer"
-                title="Mevcut tabloyu Excel veya E-Tablolar için kopyala"
-              >
-                {copiedBoardQuick ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-600" />
-                    <span className="text-emerald-700">Tablo Kopyalandı</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3" />
-                    <span>Tabloyu Kopyala</span>
-                  </>
-                )}
-              </button>
-
-              <span className="text-neutral-300">|</span>
-
-              <button
-                type="button"
-                onClick={() => setIsBulkOpen(true)}
-                className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-semibold text-[11px] cursor-pointer"
-              >
-                <ClipboardPaste className="w-3 h-3" />
-                <span>Toplu Yapıştır & Güncelle</span>
-              </button>
-
-              <span className="text-neutral-300">|</span>
-
-              {confirmReset ? (
-                <div className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 px-2 py-0.5 rounded-[2px]">
-                  <span className="text-[11px] text-red-700 font-medium">Sıfırlansın mı?</span>
-                  <button
-                    type="button"
-                    onClick={handleResetToDefault}
-                    className="text-[11px] font-bold text-red-700 hover:underline cursor-pointer"
-                  >
-                    Evet
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmReset(false)}
-                    className="text-[11px] text-neutral-500 hover:underline cursor-pointer"
-                  >
-                    İptal
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmReset(true)}
-                  className="text-neutral-500 hover:text-neutral-800 underline text-[11px] cursor-pointer"
-                >
-                  Orijinal Şablona Dön
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </main>
