@@ -14,7 +14,7 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
   isEditable = true,
   isCompact = true,
 }) => {
-  const minHeightClass = isCompact ? 'min-h-[19px] sm:min-h-[21px]' : 'min-h-[26px] sm:min-h-[28px]';
+  const minHeightClass = isCompact ? 'min-h-[15px] sm:min-h-[17px]' : 'min-h-[22px] sm:min-h-[24px]';
   const paddingClass = isCompact ? 'px-1 py-0' : 'px-1.5 py-0.5';
   const textClass = isCompact ? 'text-[9.5px] sm:text-[10.5px]' : 'text-[10.5px] sm:text-[11px]';
 
@@ -22,12 +22,12 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
     return (
       <div
         onClick={onClick}
-        className={`w-full h-full ${minHeightClass} flex items-center justify-center p-0 transition-colors group cursor-pointer ${
+        className={`w-full h-full ${minHeightClass} flex items-center justify-center p-0 transition-colors group cursor-pointer leading-none ${
           isEditable ? 'hover:bg-neutral-100/70' : ''
         }`}
         title={isEditable ? 'Sefer bilgisi eklemek için tıklayın' : undefined}
       >
-        <span className="text-[9px] text-neutral-300 select-none group-hover:text-neutral-400 font-mono">
+        <span className="text-[9px] text-neutral-300 select-none group-hover:text-neutral-400 font-mono leading-none">
           -
         </span>
       </div>
@@ -39,7 +39,7 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
     return (
       <div
         onClick={onClick}
-        className={`w-full h-full ${minHeightClass} bg-black text-transparent select-none cursor-pointer border border-neutral-900 transition-opacity hover:opacity-90 rounded-[2px]`}
+        className={`w-full h-full ${minHeightClass} bg-black text-transparent select-none cursor-pointer border border-neutral-900 transition-opacity hover:opacity-90 rounded-[2px] leading-none`}
         title="Sefer Dışı / Bloke (Değiştirmek için tıklayın)"
       >
         &nbsp;
@@ -75,10 +75,10 @@ export const TripCellView: React.FC<TripCellViewProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`w-full h-full ${minHeightClass} ${paddingClass} flex items-center justify-center text-center ${textClass} leading-tight cursor-pointer border border-black/10 rounded-[2px] shadow-2xs hover:brightness-95 transition-all ${bgClasses}`}
+      className={`w-full h-full ${minHeightClass} ${paddingClass} flex items-center justify-center text-center ${textClass} ${isCompact ? 'leading-none' : 'leading-tight'} cursor-pointer border border-black/10 rounded-[2px] shadow-2xs hover:brightness-95 transition-all ${bgClasses}`}
       title={`${trip.text} (Düzenlemek için tıklayın)`}
     >
-      <span className={`font-semibold tracking-tight ${isCompact ? 'line-clamp-1' : 'line-clamp-2'}`}>{trip.text}</span>
+      <span className={`font-semibold tracking-tight ${isCompact ? 'line-clamp-1 leading-none' : 'line-clamp-2'}`}>{trip.text}</span>
     </div>
   );
 };

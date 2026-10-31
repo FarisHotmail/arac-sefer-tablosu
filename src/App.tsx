@@ -469,12 +469,12 @@ export default function App() {
                       key={row.id}
                       className={`hover:bg-neutral-50/80 transition-colors ${
                         index % 2 === 1 ? 'bg-neutral-50/40' : 'bg-white'
-                      } ${isCompact ? 'h-[20px] sm:h-[22px]' : 'h-[36px]'}`}
+                      } ${isCompact ? 'h-[16px] sm:h-[18px]' : 'h-[32px]'}`}
                     >
                       {/* Sadece Plaka Sütunu Sabittir (Sticky left-0) - Arkaplan Beyaz */}
                       <td
                         className={`bg-white text-black font-mono font-bold tracking-tight border-b border-r-2 border-neutral-300 sticky left-0 z-20 box-border whitespace-nowrap shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)] ${
-                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-2.5 sm:px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-none' : 'py-1.5 px-2.5 sm:px-3 text-xs leading-tight'
                         }`}
                       >
                         {row.plate}
@@ -483,12 +483,12 @@ export default function App() {
                       {/* Sürücü Sütunu Sabit Değildir - Arkaplan Beyaz, Yazı Siyah ve Düz */}
                       <td
                         className={`bg-white text-black font-medium not-italic border-b border-r border-neutral-300 box-border whitespace-nowrap overflow-hidden text-ellipsis ${
-                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-none' : 'py-1.5 px-3 text-xs leading-tight'
                         }`}
                         title={row.driver}
                       >
                         {row.driver || (
-                          <span className="text-neutral-400 text-[10px]">-</span>
+                          <span className="text-neutral-400 text-[10px] leading-none">-</span>
                         )}
                       </td>
 
@@ -498,7 +498,7 @@ export default function App() {
                         return (
                           <td
                             key={col.id}
-                            className={`border-b border-r border-neutral-300 align-middle box-border ${isCompact ? 'p-[1px]' : 'p-1'}`}
+                            className={`border-b border-r border-neutral-300 align-middle box-border ${isCompact ? 'p-0' : 'p-0.5'}`}
                           >
                             <TripCellView
                               trip={trip}
@@ -518,7 +518,7 @@ export default function App() {
                       <td
                         onClick={() => setEditingNoteRow(row)}
                         className={`align-middle cursor-pointer hover:bg-neutral-100 transition-colors border-b border-neutral-300 box-border ${
-                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-tight' : 'py-2 px-3 text-xs'
+                          isCompact ? 'py-0 px-1.5 sm:px-2 text-[10px] sm:text-[10.5px] leading-none' : 'py-1.5 px-3 text-xs leading-tight'
                         } ${row.notesAlert ? 'text-red-600 font-semibold' : 'text-neutral-700'}`}
                         title="Notu düzenlemek için tıklayın"
                       >
@@ -527,10 +527,10 @@ export default function App() {
                             {row.notesAlert && (
                               <span className="w-1.5 h-1.5 rounded-[2px] bg-red-600 shrink-0" />
                             )}
-                            <span className={isCompact ? 'truncate max-w-[220px]' : 'line-clamp-2'}>{row.notes}</span>
+                            <span className={isCompact ? 'truncate max-w-[220px] leading-none' : 'line-clamp-2'}>{row.notes}</span>
                           </div>
                         ) : (
-                          <span className="text-neutral-300 select-none">-</span>
+                          <span className="text-neutral-300 select-none leading-none">-</span>
                         )}
                       </td>
                     </tr>
